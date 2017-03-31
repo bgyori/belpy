@@ -4,6 +4,7 @@ import pickle
 from matplotlib import pyplot as plt
 import numpy as np
 from indra.util import plot_formatting as pf
+from indra.util import write_unicode_csv
 from collections import Counter
 from indra.statements import *
 from indra.preassembler import Preassembler
@@ -76,12 +77,13 @@ def plot_frequencies(counts, plot_filename, bin_interval):
     plt.savefig(plot_filename)
 
 
-def report_grounding(stmts, list_length=10, bin_interval=10, plot_prefix=None):
+def report_grounding(stmts, bin_interval=10,
+                     plot_prefix=None):
     # All agents
     agents = gm.agent_texts_with_grounding(stmts)
-    logger.info('Top %d agent strings, with frequencies:' % list_length)
-    for i in range(list_length):
-        logger.info('%s: %d' % (agents[i][0], agents[i][2]))
+    agent_lines = [(agents[i][0], agents[i][2])
+                   for i in range(len(agents))]
+    write_unicode_csv('%s_agents.csv' % plot_prefix, agent_lines)
     agent_counts = [t[2] for t in agents]
     if plot_prefix:
         plot_filename = '%s_agent_distribution.pdf' % plot_prefix
@@ -90,10 +92,10 @@ def report_grounding(stmts, list_length=10, bin_interval=10, plot_prefix=None):
         plot_frequencies(agent_counts, plot_filename, bin_interval)
     # Ungrounded agents
     ungrounded = gm.ungrounded_texts(stmts)
-    logger.info('Top %d ungrounded strings, with frequencies' % list_length)
-    import ipdb; ipdb.set_trace()
-    for i in range(list_length):
-        logger.info('%s: %d' % (ungrounded[i][0], ungrounded[i][1]))
+    ungrounded_lines = [(ungrounded[i][0], ungrounded[i][1])
+                        for i in range(len(ungrounded))]
+    write_unicode_csv('%s_ungrounded.csv' % plot_prefix, ungrounded_lines)
+
     ungr_counts = [t[1] for t in ungrounded]
     if plot_prefix:
         plot_filename = '%s_ungrounded_distribution.pdf' % plot_prefix
