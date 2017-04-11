@@ -5,6 +5,7 @@ import csv
 import sys
 import json
 import pickle
+import random
 import logging
 from copy import deepcopy
 from collections import Counter
@@ -234,6 +235,39 @@ def get_sentences_for_agent(text, stmts, max_sentences=None):
     return sentences
 
 
+def raw_agent_texts(stmts, num_agents, filename):
+    agent_tuples = []
+    for stmt in stmts:
+        for agent in stmt.agent_list():
+            # Agents don't always have a TEXT db_refs entry (for instance
+            # in the case of Statements from databases) so we check for this.
+            if agent is not None and agent.db_refs.get('TEXT') is not None:
+                agent_tuples.append((agent, stmt.evidence[0].pmid,
+                                     stmt.evidence[0].text))
+    max_grounding = max([len(agt[0].db_refs) for agt in agent_tuples])
+    # File will need a column for the agent text itself, plus two columns
+    # for every key:value pair in db_refs
+    # Shuffle the agents
+    random.Random(0).shuffle(agent_tuples)
+    raw_agent_lines = []
+    for ag, pmid, text in agent_tuples[:num_agents]:
+        line = []
+        line.append(ag.db_refs['TEXT'])
+        grounding_count = 0
+        for db_name, db_id in ag.db_refs.items():
+            if db_name == 'TEXT':
+                continue
+            line += [db_name, db_id]
+            grounding_count += 1
+        while grounding_count < max_grounding:
+            line += ['', '']
+            grounding_count += 1
+        line += [pmid, text]
+        raw_agent_lines.append(line)
+    write_unicode_csv(filename, raw_agent_lines, delimiter=',', quotechar='"',
+                      quoting=csv.QUOTE_MINIMAL, lineterminator='\r\n')
+    return agent_tuples
+
 def agent_texts_with_grounding(stmts):
     allag = all_agents(stmts)
     # Convert PFAM-DEF lists into tuples so that they are hashable and can
@@ -287,7 +321,7 @@ def ungrounded_texts(stmts):
                   if ag is not None and list(ag.db_refs.keys()) == ['TEXT']]
     ungroundc = Counter(ungrounded)
     ungroundc = list(ungroundc.items())
-    ungroundc.sort(key=lambda x: x[1], reverse=True)
+    ungroundc.sort(key=lambda x: (-x[1], x[0]))
     return ungroundc
 
 
