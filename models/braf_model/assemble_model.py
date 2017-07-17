@@ -47,7 +47,7 @@ def assemble_model(model_id, reread=False):
     # Assemble the PySB model
     pa = PysbAssembler()
     pa.add_statements(tp.statements)
-    model = pa.make_model(policies='two_step')
+    model = pa.make_model(policies='michaelis_menten')
 
     # Set initial conditions
     erk = model.monomers['ERK']
@@ -97,18 +97,26 @@ def assemble_model(model_id, reread=False):
     model.parameters['kf_vb_bind_1'].value = 10
     model.parameters['kr_vb_bind_1'].value = 1
 
-    model.parameters['kf_bm_bind_1'].value = 1
-    model.parameters['kr_bm_bind_1'].value = 0.1
+    model.parameters['Km_bm_phosphorylation_1'].value = 3.1
     model.parameters['kc_bm_phosphorylation_1'].value = 3
-    model.parameters['kf_pm_bind_1'].value = 1
-    model.parameters['kr_pm_bind_1'].value = 0.001
-    model.parameters['kc_pm_dephosphorylation_1'].value = 10
-    model.parameters['kf_me_bind_1'].value = 1
-    model.parameters['kr_me_bind_1'].value = 0.1
+    #model.parameters['kf_bm_bind_1'].value = 1
+    #model.parameters['kr_bm_bind_1'].value = 0.1
+    #model.parameters['kc_bm_phosphorylation_1'].value = 3
+    model.parameters['Km_pm_phosphorylation_1'].value = 10
+    model.parameters['kc_pm_phosphorylation_1'].value = 10
+    #model.parameters['kf_pm_bind_1'].value = 1
+    #model.parameters['kr_pm_bind_1'].value = 0.001
+    #model.parameters['kc_pm_dephosphorylation_1'].value = 10
+    model.parameters['Km_me_phosphorylation_1'].value = 10.1
     model.parameters['kc_me_phosphorylation_1'].value = 10
-    model.parameters['kf_de_bind_1'].value = 1
-    model.parameters['kr_de_bind_1'].value = 0.001
-    model.parameters['kc_de_dephosphorylation_1'].value = 10
+    #model.parameters['kf_me_bind_1'].value = 1
+    #model.parameters['kr_me_bind_1'].value = 0.1
+    #model.parameters['kc_me_phosphorylation_1'].value = 10
+    model.parameters['Km_de_phosphorylation_1'].value = 10
+    model.parameters['kc_de_phosphorylation_1'].value = 10
+    #model.parameters['kf_de_bind_1'].value = 1
+    #model.parameters['kr_de_bind_1'].value = 0.001
+    #model.parameters['kc_de_dephosphorylation_1'].value = 10
 
 
     model.parameters['VEMURAFENIB_0'].value = 0
@@ -125,12 +133,16 @@ def assemble_model(model_id, reread=False):
 
     if model_id >= 2:
         model.parameters['Phosphatase_0'].value = 1e2
-        model.parameters['kf_es_bind_1'].value = 1e-05
-        model.parameters['kr_es_bind_1'].value = 1e-04
+        model.parameters['Km_es_phosphorylation_1'].value = 1e5
         model.parameters['kc_es_phosphorylation_1'].value = 1
-        model.parameters['kf_ps_bind_1'].value = 1
-        model.parameters['kr_ps_bind_1'].value = 0.1
-        model.parameters['kc_ps_dephosphorylation_1'].value = 1e-04
+        #model.parameters['kf_es_bind_1'].value = 1e-05
+        #model.parameters['kr_es_bind_1'].value = 1e-04
+        #model.parameters['kc_es_phosphorylation_1'].value = 1
+        model.parameters['Km_ps_phosphorylation_1'].value = 1e-1
+        model.parameters['kc_ps_phosphorylation_1'].value = 1e-4
+        #model.parameters['kf_ps_bind_1'].value = 1
+        #model.parameters['kr_ps_bind_1'].value = 0.1
+        #model.parameters['kc_ps_dephosphorylation_1'].value = 1e-04
 
     if model_id >= 3:
         model.parameters['kf_bb_bind_1'].value = 10

@@ -166,15 +166,16 @@ if __name__ == '__main__':
     ts = np.linspace(0, sim_hours*3600, sim_hours*60)
     egf_doses = np.logspace(1, 4, 9)
     vem_doses = np.logspace(4, 6, 9)
-    for model_id in (1, 2, 3):
+    for model_id in (3,):
+    #for model_id in (1, 2, 3):
         print('Running model %d' % model_id)
         print('----------------')
-        if os.path.exists('model%d.pkl' % model_id):
-            model = load_model(model_id)
-        else:
-            model = assemble_model.assemble_model(model_id)
-            generate_equations(model)
-            save_model(model)
+        #if os.path.exists('model%d.pkl' % model_id):
+        #    model = load_model(model_id)
+        #else:
+        model = assemble_model.assemble_model(model_id)
+        generate_equations(model)
+        save_model(model)
         print_statistics(model)
 
         # Run time-course simulation
