@@ -2,6 +2,8 @@
 elsevier_api_keys
 cr_clickthrough_key
 biogrid_api_key
+*.html
+old/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
