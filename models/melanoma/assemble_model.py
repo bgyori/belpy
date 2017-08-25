@@ -1,12 +1,12 @@
 import os
 import sys
+import csv
 import process_data
 from random import shuffle
 from indra.sources import biopax
 import indra.tools.assemble_corpus as ac
 from indra.assemblers import CxAssembler
 from indra.literature.pubmed_client import get_ids_for_gene
-import csv
 from indra.statements import *
 from indra.assemblers import CyJSAssembler
 from tqdm import tqdm
@@ -25,10 +25,6 @@ def get_gene_names(path):
         for row in csvreader:
             gene_list.append(row[0].strip())
     return sorted(list(set(gene_list)))
-
-def get_reach_output(path):
-    stmts = ac.load_statements(path)
-    return stmts
 
 def chunked_assembly(chunk_stmts, save_file, gene_names):
     chunk_stmts = ac.map_grounding(chunk_stmts)
@@ -89,12 +85,13 @@ def assemble_cyjs(stmts, save_file):
     return cja
 
 if __name__ == '__main__':
+    run_reading = False
     data = process_data.read_data()
     gene_names = process_data.get_gene_names(data)
-    pmids = process_data.get_pmids(gene_names)
-    run_reading(pmids)
-    reach_stmts = get_reach_output('stmts.pkl')
+    if run_reading:
+        pmids = process_data.get_pmids(gene_names)
+        run_reading(pmids)
+    stmts = ac.load_statements('stmts.pkl')
     ras_gene_names = get_gene_names('../../data/ras_pathway_proteins.csv')
-    stmts = reach_stmts
     stmts = run_assembly(stmts, 'final_stmts.pkl', ras_gene_names)
     assemble_cyjs(stmts, 'model')
