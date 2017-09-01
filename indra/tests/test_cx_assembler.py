@@ -78,11 +78,13 @@ def test_cited():
     cxa.add_statements([st_cited])
     cxa.make_model()
     assert(len(cxa.cx['citations']) == 1)
-    assert(len(cxa.cx['edgeCitations']) == 1)
     citation = cxa.cx['citations'][0]
     assert(citation.get('dc:identifier') == 'pmid:12345')
-    cid = citation.get('@id')
-    assert(cxa.cx['edgeCitations'][0]['citations'][0] == cid)
+    attr = None
+    for ea in cxa.cx['edgeAttributes']:
+        if ea.get('n') == 'ndex:citation':
+            attr = ea
+    assert(attr.get('v')[0] == 'pmid:12345')
     print(cxa.print_cx())
 
 def test_invalid_cited():
@@ -90,7 +92,7 @@ def test_invalid_cited():
     cxa.add_statements([st_invalid_cited])
     cxa.make_model()
     assert(not cxa.cx['citations'])
-    assert(not cxa.cx['edgeCitations'])
+    assert(not [attr for attr in cxa.cx['edgeAttributes'] if attr.get('n') == 'ndex:citation'])
 
 def test_supports():
     cxa = CxAssembler()
@@ -116,4 +118,5 @@ def test_make_print_model():
 def test_no_pmid():
     cxa = CxAssembler([st_not_cited])
     cxa.make_model()
-    assert(not cxa.cx['edgeCitations'])
+    assert(not [attr for attr in cxa.cx['edgeAttributes'] if attr.get('n') == 'ndex:citation'])
+    assert(not cxa.cx['citations'])

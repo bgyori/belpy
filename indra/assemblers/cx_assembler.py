@@ -56,7 +56,7 @@ class CxAssembler(object):
         self.network_name = 'indra_assembled'
         self.cx = {'nodes': [], 'edges': [],
                    'nodeAttributes': [], 'edgeAttributes': [],
-                   'citations': [], 'edgeCitations': [],
+                   'citations': [],
                    'supports': [], 'edgeSupports': [],
                    'networkAttributes': []}
         self._existing_nodes = {}
@@ -399,7 +399,6 @@ class CxAssembler(object):
 
         # Add the citations for the edge
         pmids = [e.pmid for e in stmt.evidence if e.pmid]
-        edge_citations = []
         pmids_added = []
         for pmid in pmids:
             pmid_txt = None
@@ -410,12 +409,12 @@ class CxAssembler(object):
                     citation = {'@id': citation_id,
                                 'dc:identifier': pmid_txt}
                     self.cx['citations'].append(citation)
-                    edge_citations.append(citation_id)
                     pmids_added.append(pmid_txt)
-        if edge_citations:
-            edge_citation = {'citations': edge_citations,
-                             'po': [edge_id]}
-            self.cx['edgeCitations'].append(edge_citation)
+                    edge_citation = {'po': edge_id,
+                                     'v': [pmid_txt],
+                                     'n': 'ndex:citation',
+                                     'd': 'list_of_string'}
+                    self.cx['edgeAttributes'].append(edge_citation)
 
         # Add the textual supports for the edge
         texts = [e.text for e in stmt.evidence if e.text]
