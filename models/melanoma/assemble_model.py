@@ -1,6 +1,7 @@
+from indra.util import _require_python3
 import os
 import sys
-import process_data
+import pandas as pd
 from random import shuffle
 from indra.sources import biopax
 import indra.tools.assemble_corpus as ac
@@ -8,14 +9,17 @@ from indra.assemblers import CxAssembler
 from indra.literature.pubmed_client import get_ids_for_gene
 from indra.statements import *
 from indra.assemblers import CyJSAssembler
-from tqdm import tqdm
 from indra.tools.reading.submit_reading_pipeline_aws import \
     submit_run_reach, wait_for_complete
 from indra.sources import biopax, bel
-import pandas as pd
+import process_data
 
-if sys.version_info[0] < 3:
-    raise Exception('Run this only in Python 3')
+try:
+    use_tqdm = True
+    from tqdm import tqdm
+except:
+    use_tqdm = False
+    pass
 
 def read_gene_list(path):
     df = pd.read_csv(path, sep='\t', error_bad_lines=False, header=None)
@@ -72,7 +76,10 @@ def run_assembly(stmts, save_file, gene_names):
     stmts_assembled = []
     chunk_size = 25000
     stmt_chunk_paths = []
-    for i in tqdm(range(0, len(stmts), chunk_size)):
+    for_range = range(0, len(stmts), chunk_size)
+    if use_tqdm:
+        for_range = tqdm(for_range)
+    for i in for_range:
         path = 'chunks/final_stmts_' + str(i) + '.pkl'
         stmt_chunk_paths.append(path)
         if os.path.isfile(path):
