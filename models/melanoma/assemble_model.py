@@ -93,5 +93,9 @@ if __name__ == '__main__':
         run_reading(pmids)
     stmts = ac.load_statements('stmts.pkl')
     ras_gene_names = get_gene_names('../../data/ras_pathway_proteins.csv')
-    stmts = run_assembly(stmts, 'final_stmts.pkl', ras_gene_names)
+    msb2015_gene_names = get_gene_names('MohammadFS_MSB_2015_gene_list.csv')
+    msb2017_gene_names = get_gene_names('MohammadFS_MSB_2017_gene_list.csv')
+    gene_list = ras_gene_names + msb2015_gene_names + msb2017_gene_names
+    gene_list = sorted(list(set(gene_list)))
+    stmts = run_assembly(stmts, 'final_stmts.pkl', gene_list)
     assemble_cyjs(stmts, 'model')
