@@ -596,8 +596,8 @@ class Agent(object):
         if other is None:
             return True
 
-        # Make sure the Agent types match
-        if type(self) != type(other):
+        # Make sure the Agent types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
 
         # ENTITIES
@@ -1121,7 +1121,7 @@ class Modification(Statement):
         self.sub = agent_list[1]
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
+        # Make sure the statement types match or are hierarchically related
         if not isinstance(self, type(other)):
             return False
 
@@ -1257,8 +1257,8 @@ class SelfModification(Statement):
         self.enz = agent_list[0]
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
 
         # Check agent arguments
@@ -1504,8 +1504,8 @@ class RegulateActivity(Statement):
         self.obj = agent_list[1]
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
         if self.is_activation != other.is_activation:
             return False
@@ -1695,8 +1695,8 @@ class ActiveForm(Statement):
         self.agent = agent_list[0]
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
 
         # Check agent arguments
@@ -1803,8 +1803,8 @@ class HasActivity(Statement):
         self.agent = agent_list[0]
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
 
         # Check agent arguments
@@ -1879,8 +1879,8 @@ class Gef(Statement):
         return s
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
         # Check the GEF
         if self.gef.refinement_of(other.gef, hierarchies) and \
@@ -1962,8 +1962,8 @@ class Gap(Statement):
         self.ras = agent_list[1]
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
         # Check the GAP
         if self.gap.refinement_of(other.gap, hierarchies) and \
@@ -2051,8 +2051,8 @@ class Complex(Statement):
         return s
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
         # Make sure the length of the members list is the same. Note that this
         # treats Complex([A, B, C]) as distinct from Complex([A, B]), rather
@@ -2130,8 +2130,8 @@ class Translocation(Statement):
         return s
 
     def refinement_of(self, other, hierarchies=None):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
         # Check several conditions for refinement
         ch = hierarchies['cellular_component']
@@ -2246,8 +2246,8 @@ class RegulateAmount(Statement):
         return stmt
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
 
         # Check agent arguments
@@ -2381,8 +2381,8 @@ class Conversion(Statement):
         return stmt
 
     def refinement_of(self, other, hierarchies):
-        # Make sure the statement types match
-        if type(self) != type(other):
+        # Make sure the statement types match or are hierarchically related
+        if not isinstance(self, type(other)):
             return False
 
         if self.subj is None and other.subj is None:

@@ -1461,3 +1461,9 @@ def test_refinement_mod_phos():
     assert not st2.refinement_of(st1, hierarchies)
     assert not st3.refinement_of(st2, hierarchies)
     assert not st3.refinement_of(st1, hierarchies)
+
+def test_refinement_gtp_activation():
+    st1 = Activation(Agent('a'), Agent('b'))
+    st2 = GtpActivation(Agent('a'), Agent('b'))
+    assert not st1.refinement_of(st2, hierarchies)
+    assert st2.refinement_of(st1, hierarchies)
