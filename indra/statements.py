@@ -592,6 +592,10 @@ class Agent(object):
         return hierarchies['entity'].isa(self_ns, self_id, other_ns, other_id)
 
     def refinement_of(self, other, hierarchies):
+        # If the other Agent is None, then this is definitely a refinement
+        if other is None:
+            return True
+
         # Make sure the Agent types match
         if type(self) != type(other):
             return False
@@ -1118,7 +1122,7 @@ class Modification(Statement):
 
     def refinement_of(self, other, hierarchies):
         # Make sure the statement types match
-        if type(self) != type(other):
+        if not isinstance(self, type(other)):
             return False
 
         # Check agent arguments

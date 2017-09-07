@@ -1451,3 +1451,13 @@ def test_conversion_set_agent_list():
     assert(len(st3.obj_from) == 1)
     assert(len(st3.obj_to) == 2)
 
+def test_refinement_mod_phos():
+    st1 = Phosphorylation(Agent('a'), Agent('b'))
+    st2 = Dephosphorylation(Agent('a'), Agent('b'))
+    st3 = Modification(Agent('a'), Agent('b'))
+    assert st1.refinement_of(st3, hierarchies)
+    assert st2.refinement_of(st3, hierarchies)
+    assert not st1.refinement_of(st2, hierarchies)
+    assert not st2.refinement_of(st1, hierarchies)
+    assert not st3.refinement_of(st2, hierarchies)
+    assert not st3.refinement_of(st1, hierarchies)
