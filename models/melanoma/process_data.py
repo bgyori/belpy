@@ -1,11 +1,11 @@
-import pandas
+import pandas as pd
 from indra.databases import uniprot_client
 from indra.literature.pubmed_client import get_ids_for_gene
 
 data_fname = 'copies_per_cell.csv'
 
 def read_data(fname=data_fname):
-    data = pandas.read_csv(fname)
+    data = pd.read_csv(fname)
     return data
 
 def get_gene_names(data):
