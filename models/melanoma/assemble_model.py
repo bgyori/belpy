@@ -106,16 +106,27 @@ def assemble_cyjs(stmts, save_file):
 
 if __name__ == '__main__':
     run_reading = False
+    run_assembly = False
+    run_cyjs_assembly = False
     data = process_data.read_data()
     gene_names = process_data.get_gene_names(data)
     if run_reading:
         pmids = process_data.get_pmids(gene_names)
         run_reading(pmids)
-    stmts = ac.load_statements('stmts.pkl')
-    ras_gene_names = get_gene_names('../../data/ras_pathway_proteins.csv')
-    msb2015_gene_names = get_gene_names('MohammadFS_MSB_2015_gene_list.csv')
-    msb2017_gene_names = get_gene_names('MohammadFS_MSB_2017_gene_list.csv')
-    gene_list = ras_gene_names + msb2015_gene_names + msb2017_gene_names
+    ras_gene_list = read_gene_list('../../data/ras_pathway_proteins.csv')
+    msb2015_gene_list = read_gene_list('MohammadFS_MSB_2015_gene_list.csv')
+    msb2017_gene_list = read_gene_list('MohammadFS_MSB_2017_gene_list.csv')
+    gene_list = ras_gene_list + msb2015_gene_list + msb2017_gene_list
+    assert len(gene_list) > len(ras_gene_list)
     gene_list = sorted(list(set(gene_list)))
-    stmts = run_assembly(stmts, 'final_stmts.pkl', gene_list)
-    assemble_cyjs(stmts, 'model')
+    stmts = []
+    bp_stmts = get_biopax_stmts(gene_list)
+    stmts += bp_stmts
+    ndex_stmts = get_ndex_stmts(gene_list)
+    stmts += ndex_stmts
+    ac.dump_statements(stmts, 'stmts_all.pkl')
+    stmts += ac.load_statements('stmts.pkl')
+    if run_assembly:
+        stmts = run_assembly(stmts, 'final_stmts.pkl', gene_list)
+    if run_cyjs_assembly:
+        assemble_cyjs(stmts, 'model')
