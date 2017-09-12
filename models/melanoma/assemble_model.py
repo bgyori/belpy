@@ -11,6 +11,7 @@ from indra.assemblers import CyJSAssembler
 from tqdm import tqdm
 from indra.tools.reading.submit_reading_pipeline_aws import \
     submit_run_reach, wait_for_complete
+from indra.sources import biopax
 import pandas as pd
 
 if sys.version_info[0] < 3:
@@ -20,6 +21,18 @@ def read_gene_list(path):
     df = pd.read_csv(path, sep='\t', error_bad_lines=False, header=None)
     gene_list = df[0].tolist()
     return sorted(list(set(gene_list)))
+
+def get_biopax_stmts(gene_list):
+    bp_stmts_path = 'stmts_from_dbs/bp_stmts.pkl'
+    if os.path.isfile(bp_stmts_path):
+        bp_stmts = ac.load_statements(bp_stmts_path)
+    else:
+        bp_stmts = []
+        for gene in tqdm(gene_list):
+            bp = biopax.process_pc_neighborhood([gene])
+            bp_stmts += bp.statements
+        ac.dump_statements(bp_stmts, bp_stmts_path)
+    return bp_stmts
 
 def chunked_assembly(chunk_stmts, save_file, gene_names):
     chunk_stmts = ac.map_grounding(chunk_stmts)
