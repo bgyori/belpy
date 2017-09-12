@@ -1,6 +1,8 @@
 import pandas as pd
 from indra.databases import uniprot_client
 from indra.literature.pubmed_client import get_ids_for_gene
+import collections
+import json
 
 data_fname = 'copies_per_cell.csv'
 
@@ -104,3 +106,39 @@ def build_extremes_table(data_fc, extreme_limit):
     return df_extremes
 
 
+def build_context_json_for_cyjs(data_fc, gene_list):
+    """
+    Make a (human readable) melted table of the fold change data and a json
+    file for cyjs context setting limited to the gene_list provided
+    """
+    data_fc = data_fc[data_fc['Gene_Symbol'].isin(gene_names)]
+    data_fc = data_fc.set_index('Gene_Symbol')
+    data_fc = data_fc.transpose()
+    data_fc = data_fc.reset_index(drop=False)
+    data_fc = data_fc.melt(id_vars=['index'])
+    data_fc.index.name = 'id'
+    data_fc.reset_index(inplace=True)
+    data_fc.drop(['id'], axis=1, inplace=True)
+    data_fc.rename(columns={'index': 'id'}, inplace=True)
+    data_fc.rename(columns={'Gene_Symbol': 'gene'}, inplace=True)
+    data_fc['antibody'] = [None] * len(data_fc)
+    data_fc['site'] = [None] * len(data_fc)
+    recursivedict = lambda: collections.defaultdict(recursivedict)
+    j = recursivedict()
+    df1 = data_fc
+    ids = df1['id'].unique().tolist()
+    for i in ids:
+        df2 = df1[df1['id'] == i]
+        genes = df2['gene'].unique().tolist()
+        for g in genes:
+            df3 = df2[df2['gene'] == g]
+            df4 = df3[~df3['site'].isin([None])]
+            j[i][g]['members']['antibodies'] = df4['antibody'].tolist()
+            j[i][g]['members']['sites'] = df4['site'].tolist()
+            j[i][g]['members']['values'] = df4['value'].tolist()
+            df5 = df3[df3['site'].isin([None])]
+            j[i][g]['node']['antibodies'] = df5['antibody'].tolist()
+            j[i][g]['node']['values'] = df5['value'].tolist()
+    df1.to_csv('data_fc_melted.csv', index=False)
+    with open('data_fc.json', 'w') as outfile:
+        json.dump(j, outfile, indent=2, sort_keys=True)
