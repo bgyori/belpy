@@ -75,3 +75,32 @@ def get_data_fold_changes(data, intra_cl_FC_cutoff, lower_limit_FC_cutoff):
     return data_fc
 
 
+def build_extremes_table(data_fc, extreme_limit):
+    """
+    This function builds a csv table with headers (human browsable)
+    and one without headers for all extreme perturbations
+    """
+    liml = -extreme_limit
+    limu = extreme_limit
+    extremes = []
+    for cl1, cl2 in itertools.combinations(cell_lines, 2):
+        filt = (((data_fc[cl1] < liml) & (data_fc[cl2] > limu)) |
+                ((data_fc[cl1] > limu) & (data_fc[cl2] < liml)))
+        data_fc_f = data_fc[filt]
+        data_fc_f = data_fc_f[['Gene_Symbol', cl1, cl2]]
+        extreme_genes = data_fc_f['Gene_Symbol'].tolist()
+        difference = (data_fc_f[cl1] - data_fc_f[cl2]).tolist()
+        for ex_g, d in zip(extreme_genes, difference):
+            extremes.append((cl1, cl2, ex_g, d))
+    extremes = sorted(extremes, key=lambda x: abs(x[3]), reverse=True)
+    df_extremes = pd.DataFrame(columns=['Cell_line1', 'Cell_line2',
+                                        'Gene_Symbol', 'Difference'],
+                               data=sorted(extremes, key=lambda x: abs(x[3]),
+                                           reverse=True))
+    df_extremes.to_csv('extremes.csv',
+                       index=False)
+    df_extremes.to_csv('extremes_nohead.csv',
+                       index=False, header=None)
+    return df_extremes
+
+
