@@ -1,6 +1,5 @@
 import os
 import sys
-import csv
 import process_data
 from random import shuffle
 from indra.sources import biopax
@@ -12,18 +11,14 @@ from indra.assemblers import CyJSAssembler
 from tqdm import tqdm
 from indra.tools.reading.submit_reading_pipeline_aws import \
     submit_run_reach, wait_for_complete
+import pandas as pd
 
 if sys.version_info[0] < 3:
     raise Exception('Run this only in Python 3')
 
-def get_gene_names(path):
-    # STEP 0: Get gene list
-    gene_list = []
-    # Get gene list from ras_pathway_proteins.csv
-    with open(path) as f:
-        csvreader = csv.reader(f, delimiter='\t')
-        for row in csvreader:
-            gene_list.append(row[0].strip())
+def read_gene_list(path):
+    df = pd.read_csv(path, sep='\t', error_bad_lines=False, header=None)
+    gene_list = df[0].tolist()
     return sorted(list(set(gene_list)))
 
 def chunked_assembly(chunk_stmts, save_file, gene_names):
