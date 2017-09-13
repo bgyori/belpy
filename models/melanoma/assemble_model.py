@@ -42,7 +42,8 @@ def get_ndex_stmts(gene_list):
         ndex_stmts = []
         for gene in tqdm(gene_list):
             ndex = bel.process_ndex_neighborhood([gene])
-            ndex_stmts += ndex.statements
+            if ndex:
+                ndex_stmts += ndex.statements
         ac.dump_statements(ndex_stmts, ndex_stmts_path)
     return ndex_stmts
 
