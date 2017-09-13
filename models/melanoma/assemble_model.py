@@ -107,8 +107,10 @@ def assemble_cyjs(stmts, save_file):
 
 if __name__ == '__main__':
     run_reading = False
-    run_assembly = False
-    run_cyjs_assembly = False
+    run_assembly = True
+    run_cyjs_assembly = True
+    query_biopax = True
+    query_ndex = True
     data = process_data.read_data()
     gene_names = process_data.get_gene_names(data)
     if run_reading:
@@ -121,10 +123,14 @@ if __name__ == '__main__':
     assert len(gene_list) > len(ras_gene_list)
     gene_list = sorted(list(set(gene_list)))
     stmts = []
-    bp_stmts = get_biopax_stmts(gene_list)
-    stmts += bp_stmts
-    ndex_stmts = get_ndex_stmts(gene_list)
-    stmts += ndex_stmts
+    bp_stmts = []
+    ndex_stmts = []
+    if query_biopax:
+        bp_stmts += get_biopax_stmts(gene_list)
+        stmts += bp_stmts
+    if query_ndex:
+        ndex_stmts += get_ndex_stmts(gene_list)
+        stmts += ndex_stmts
     ac.dump_statements(stmts, 'stmts_all.pkl')
     stmts += ac.load_statements('stmts.pkl')
     if run_assembly:
