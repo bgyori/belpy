@@ -74,8 +74,8 @@ def _stmt_from_rule(model, rule_name, stmts):
 if __name__ == '__main__':
     based = '.' # SET BASE FOLDER HERE TO ACCESS PICKLES
     stmts_to_check = make_stmts_to_check()
-    stmts = ac.load_statements(os.path.join(based, 'fallahi_eval_pysb_stmts.pkl')
-    with open(os.path.join(based, 'fallahi_eval_pysb_model.pkl', 'rb') as fh:
+    stmts = ac.load_statements(os.path.join(based, 'fallahi_eval_pysb_stmts.pkl'))
+    with open(os.path.join(based, 'fallahi_eval_pysb_model.pkl'), 'rb') as fh:
         model = pickle.load(fh)
 
     mc = ModelChecker(model, stmts_to_check)
