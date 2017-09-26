@@ -1,14 +1,23 @@
 import pandas as pd
+import numpy as np
 from indra.databases import uniprot_client
 from indra.literature.pubmed_client import get_ids_for_gene
 import collections
 import json
+import itertools
 
 data_fname = 'copies_per_cell.csv'
 
 def read_data(fname=data_fname):
     data = pd.read_csv(fname)
     return data
+
+def get_cell_lines(data):
+    cols = data.columns.tolist()
+    cell_lines = list(set([x.split('_')[0] for x in cols
+                       if x not in ['Unnamed: 0', 'Uniprot_Id', 'Gene_Symbol']]))
+    cell_lines = [x for x in cell_lines if 'Bridge' not in x]
+    return cell_lines
 
 def get_gene_names(data):
     up_ids = data.iloc[:,0]
@@ -32,7 +41,8 @@ def get_pmids(genes):
     return sorted(list(set(pmids)))
 
 
-def get_data_fold_changes(data, intra_cl_FC_cutoff, lower_limit_FC_cutoff):
+def get_data_fold_changes(data, cell_lines,
+                          intra_cl_FC_cutoff, lower_limit_FC_cutoff):
     """
     Processes the data from file to combine replicates by averaging and
     return fold changes for each cell_line, gene combo
@@ -45,39 +55,24 @@ def get_data_fold_changes(data, intra_cl_FC_cutoff, lower_limit_FC_cutoff):
         likely to be detected), fold changes cannot dip below this value
     """
 
-    cell_lines = list(set([x.split('_')[0] for x in cols
-                           if x not in ['Unnamed: 0',
-                                        'Uniprot_Id',
-                                        'Gene_Symbol']]))
-    data.drop(['Unnamed: 0', 'Uniprot_Id'], axis=1, inplace=True)
-    cell_lines = [x for x in cell_lines if 'Bridge' not in x]
-    retain_cols = []
-    for c in cols:
-        for x in cell_lines:
-            if x in c:
-                retain_cols.append(c)
-    retain_cols = ['Gene_Symbol'] + retain_cols
-    data = data[retain_cols]
-    data_fc = pd.DataFrame(columns=(['Gene_Symbol']+cell_lines))
-    data_fc['Gene_Symbol'] = df['Gene_Symbol']
+    data_fc = pd.DataFrame(columns=(['Gene_Symbol'] + cell_lines))
+    data_fc['Gene_Symbol'] = data['Gene_Symbol']
     for line in cell_lines:
-        line_cols = df.columns.tolist()
+        line_cols = data.columns.tolist()
         line_cols = [x for x in line_cols if line in x]
-        s1 = np.log2(df[line + '_Tr1'] / df[line + '_Cr1'])
-        s2 = np.log2(df[line + '_Tr2'] / df[line + '_Cr2'])
+        s1 = np.log2(data[line + '_Tr1'] / data[line + '_Cr1'])
+        s2 = np.log2(data[line + '_Tr2'] / data[line + '_Cr2'])
         f = abs(s1 - s2)
-        s = (s1 + s2)/2
-        # this makes all intra cell line variability NaN
-        # if abs(log2(FC)) > 1
+        s = (s1 + s2) / 2
+        # this makes all intra cell line variability NaN if it is greater than FC 1
         s[f > intra_cl_FC_cutoff] = float('NaN')
-        # this makes all things below -2 equal to -2
-        # don't want fold changes way below detection to be exaggerated
+        # don't want fold changes way below detection limit throwing us off
         s[s < lower_limit_FC_cutoff] = lower_limit_FC_cutoff
         data_fc[line] = s
     return data_fc
 
 
-def build_extremes_table(data_fc, extreme_limit):
+def build_extremes_table(data_fc, cell_lines, extreme_limit):
     """
     This function builds a csv table with headers (human browsable)
     and one without headers for all extreme perturbations
@@ -86,8 +81,8 @@ def build_extremes_table(data_fc, extreme_limit):
     limu = extreme_limit
     extremes = []
     for cl1, cl2 in itertools.combinations(cell_lines, 2):
-        filt = (((data_fc[cl1] < liml) & (data_fc[cl2] > limu)) |
-                ((data_fc[cl1] > limu) & (data_fc[cl2] < liml)))
+        filt = ( ( (data_fc[cl1] < liml) & (data_fc[cl2] > limu) ) |
+                 ( (data_fc[cl1] > limu) & (data_fc[cl2] < liml) ) )
         data_fc_f = data_fc[filt]
         data_fc_f = data_fc_f[['Gene_Symbol', cl1, cl2]]
         extreme_genes = data_fc_f['Gene_Symbol'].tolist()
@@ -95,14 +90,38 @@ def build_extremes_table(data_fc, extreme_limit):
         for ex_g, d in zip(extreme_genes, difference):
             extremes.append((cl1, cl2, ex_g, d))
     extremes = sorted(extremes, key=lambda x: abs(x[3]), reverse=True)
+    print(extremes)
     df_extremes = pd.DataFrame(columns=['Cell_line1', 'Cell_line2',
                                         'Gene_Symbol', 'Difference'],
-                               data=sorted(extremes, key=lambda x: abs(x[3]),
-                                           reverse=True))
-    df_extremes.to_csv('extremes.csv',
-                       index=False)
-    df_extremes.to_csv('extremes_nohead.csv',
-                       index=False, header=None)
+                               data = sorted(extremes, key=lambda x: abs(x[3]), reverse=True))
+    df_extremes.to_csv('extremes.csv', index=False)
+    df_extremes.to_csv('extremes_nohead.csv', index=False, header=None)
+    return df_extremes
+
+
+def build_extremes_each_line(data_fc, cell_lines, extreme_limit):
+    """
+    This function builds a csv table with headers (human browsable)
+    and one without headers for all extreme perturbations
+    """
+    liml = -extreme_limit
+    limu = extreme_limit
+    extremes = []
+    for cl in cell_lines:
+        filt = ( ( (data_fc[cl] < liml) | (data_fc[cl] > limu) ) )
+        data_fc_f = data_fc[filt]
+        data_fc_f = data_fc_f[['Gene_Symbol', cl]]
+        extreme_genes = data_fc_f['Gene_Symbol'].tolist()
+        values = data_fc_f[cl].tolist()
+        for ex_g, d in zip(extreme_genes, values):
+            extremes.append((cl, ex_g, d))
+    extremes = sorted(extremes, key=lambda x: abs(x[2]), reverse=True)
+    print(extremes)
+    df_extremes = pd.DataFrame(columns=['Cell_line',
+                                        'Gene_Symbol', 'Difference'],
+                               data = sorted(extremes, key=lambda x: abs(x[2]), reverse=True))
+    df_extremes.to_csv('extremes_each_cl.csv', index=False)
+    df_extremes.to_csv('extremes_each_cl_nohead.csv', index=False, header=None)
     return df_extremes
 
 
