@@ -326,6 +326,9 @@ class ModelChecker(object):
         subj_mp = pa.get_monomer_pattern(self.model, stmt.subj)
         target_polarity = 1 if isinstance(stmt, IncreaseAmount) else -1
         obs_names = self.stmt_to_obs[stmt]
+        if obs_names is None:
+            logger.error('No observables for %s, skipping.' % stmt)
+            return None
         for obs_name in obs_names:
             return self._find_im_paths(subj_mp, obs_name, target_polarity,
                                        max_paths, max_path_length)
