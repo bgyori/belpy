@@ -4,6 +4,7 @@ from indra.statements import *
 import indra.tools.assemble_corpus as ac
 from indra.assemblers import PysbAssembler
 from indra.explanation.model_checker import ModelChecker
+from process_data import *
 
 def make_stmts_to_check():
     # Vemurafenib treatment results in decreased amount of SPRY1, 2 and 4

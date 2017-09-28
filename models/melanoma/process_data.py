@@ -8,6 +8,10 @@ import itertools
 
 data_fname = 'copies_per_cell.csv'
 
+data = read_data()
+cell_lines = get_cell_lines(data)
+
+
 def read_data(fname=data_fname):
     data = pd.read_csv(fname)
     return data
@@ -39,8 +43,8 @@ def get_pmids(genes):
     return sorted(list(set(pmids)))
 
 
-def get_data_fold_changes(data, cell_lines,
-                          intra_cl_FC_cutoff=0.3, lower_limit_FC_cutoff=-2):
+def get_data_fold_changes(data, intra_cl_FC_cutoff=0.3,
+                          lower_limit_FC_cutoff=-2):
     """
     Processes the data from file to combine replicates by averaging and
     return fold changes for each cell_line, gene combo
@@ -71,7 +75,7 @@ def get_data_fold_changes(data, cell_lines,
     return data_fc
 
 
-def build_extremes_table(data_fc, cell_lines, extreme_limit=0.4):
+def build_extremes_table(data_fc, extreme_limit=0.4):
     """
     This function builds a csv table with headers (human browsable)
     and one without headers for all extreme perturbations
@@ -99,7 +103,7 @@ def build_extremes_table(data_fc, cell_lines, extreme_limit=0.4):
     return df_extremes
 
 
-def build_extremes_each_line(data_fc, cell_lines, extreme_limit):
+def build_extremes_each_line(data_fc, extreme_limit):
     """
     This function builds a csv table with headers (human browsable)
     and one without headers for all extreme perturbations
