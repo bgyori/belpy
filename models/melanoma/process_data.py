@@ -13,10 +13,8 @@ def read_data(fname=data_fname):
     return data
 
 def get_cell_lines(data):
-    cols = data.columns.tolist()
-    cell_lines = list(set([x.split('_')[0] for x in cols
-                       if x not in ['Unnamed: 0', 'Uniprot_Id', 'Gene_Symbol']]))
-    cell_lines = [x for x in cell_lines if 'Bridge' not in x]
+    cell_lines = list(set([col_name.split('_')[0] for col_name
+                           in data.columns[3:] if 'Bridge' not in col_name]))
     return cell_lines
 
 def get_gene_names(data):
@@ -42,7 +40,7 @@ def get_pmids(genes):
 
 
 def get_data_fold_changes(data, cell_lines,
-                          intra_cl_FC_cutoff, lower_limit_FC_cutoff):
+                          intra_cl_FC_cutoff=0.3, lower_limit_FC_cutoff=-2):
     """
     Processes the data from file to combine replicates by averaging and
     return fold changes for each cell_line, gene combo
@@ -60,19 +58,20 @@ def get_data_fold_changes(data, cell_lines,
     for line in cell_lines:
         line_cols = data.columns.tolist()
         line_cols = [x for x in line_cols if line in x]
-        s1 = np.log2(data[line + '_Tr1'] / data[line + '_Cr1'])
-        s2 = np.log2(data[line + '_Tr2'] / data[line + '_Cr2'])
+        s1 = data[line + '_Tr1'] / data[line + '_Cr1']
+        s2 = data[line + '_Tr2'] / data[line + '_Cr2']
         f = abs(s1 - s2)
         s = (s1 + s2) / 2
         # this makes all intra cell line variability NaN if it is greater than FC 1
-        s[f > intra_cl_FC_cutoff] = float('NaN')
+        s[np.log10(f) > intra_cl_FC_cutoff] = np.nan
         # don't want fold changes way below detection limit throwing us off
         s[s < lower_limit_FC_cutoff] = lower_limit_FC_cutoff
-        data_fc[line] = s
+        s[np.isinf(s)] = np.nan
+        data_fc[line] = np.log10(s)
     return data_fc
 
 
-def build_extremes_table(data_fc, cell_lines, extreme_limit):
+def build_extremes_table(data_fc, cell_lines, extreme_limit=0.4):
     """
     This function builds a csv table with headers (human browsable)
     and one without headers for all extreme perturbations
@@ -93,7 +92,8 @@ def build_extremes_table(data_fc, cell_lines, extreme_limit):
     print(extremes)
     df_extremes = pd.DataFrame(columns=['Cell_line1', 'Cell_line2',
                                         'Gene_Symbol', 'Difference'],
-                               data = sorted(extremes, key=lambda x: abs(x[3]), reverse=True))
+                               data = sorted(extremes, key=lambda x: abs(x[3]),
+                                             reverse=True))
     df_extremes.to_csv('extremes.csv', index=False)
     df_extremes.to_csv('extremes_nohead.csv', index=False, header=None)
     return df_extremes
@@ -119,10 +119,13 @@ def build_extremes_each_line(data_fc, cell_lines, extreme_limit):
     print(extremes)
     df_extremes = pd.DataFrame(columns=['Cell_line',
                                         'Gene_Symbol', 'Difference'],
-                               data = sorted(extremes, key=lambda x: abs(x[2]), reverse=True))
+                               data = sorted(extremes, key=lambda x: abs(x[2]),
+                                             reverse=True))
     df_extremes.to_csv('extremes_each_cl.csv', index=False)
     df_extremes.to_csv('extremes_each_cl_nohead.csv', index=False, header=None)
     return df_extremes
+
+
 
 
 def build_context_json_for_cyjs(data_fc, gene_list):
