@@ -118,12 +118,15 @@ def report_grounding(stmts, bin_interval=10,
         if any(agents_ungrounded):
             any_ungrounded += 1
 
+    all_ungrounded_ratio = 100 * (all_ungrounded / float(len(stmts)))
+    any_ungrounded_ratio = 100 * (any_ungrounded / float(len(stmts)))
+
     logger.info('%d of %d (%.1f%%) statements with all agents ungrounded' %
-                (all_ungrounded, len(stmts),
-                 100 * (all_ungrounded / float(len(stmts)))))
+                (all_ungrounded, len(stmts), all_ungrounded_ratio))
     logger.info('%d of %d (%.1f%%) statements with any agents ungrounded' %
-                (any_ungrounded, len(stmts),
-                 100 * (any_ungrounded / float(len(stmts)))))
+                (any_ungrounded, len(stmts), any_ungrounded_ratio))
+
+    return all_ungrounded_ratio, any_ungrounded_ratio
 
 
 def report_stmt_types(stmts, plot_prefix=None):
