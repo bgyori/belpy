@@ -272,7 +272,7 @@ def get_dois(query_str, count=100):
     return dois
 
 
-def get_piis(query_str):
+def get_piis(query_str, start_year=1960):
     """Search ScienceDirect through the API for articles and return PIIs.
 
     Note that ScienceDirect has a limitation in which a maximum of 6,000
@@ -284,13 +284,15 @@ def get_piis(query_str):
     ----------
     query_str : str
         The query string to search with
+    start_year : int
+        The earliest year of publication to search for
 
     Returns
     -------
     piis : list[str]
         The list of PIIs identifying the papers returned by the search
     """
-    dates = range(1960, datetime.datetime.now().year)
+    dates = range(start_year, datetime.datetime.now().year)
     all_piis = flatten([get_piis_for_date(query_str, date) for date in dates])
     return all_piis
 
@@ -396,6 +398,16 @@ def _get_article_body(full_text_elem):
         return _get_sections(main_body)
     logger.info("Could not find main body element "
                 "xocs:doc/xocs:serial-item/ja:converted-article/ja:body")
+
+    # If no luck with ja:article, try ja:converted_article
+    main_body = full_text_elem.find('xocs:doc/xocs:serial-item/'
+                                    'ja:simple-article/ja:body', elsevier_ns)
+    if main_body is not None:
+        logger.info("Found main body element "
+                    "xocs:doc/xocs:serial-item/ja:simple-article/ja:body")
+        return _get_sections(main_body)
+    logger.info("Could not find main body element "
+                "xocs:doc/xocs:serial-item/ja:simple-article/ja:body")
     # If we haven't returned by this point, then return None
     return None
 
@@ -404,26 +416,36 @@ def _get_sections(main_body_elem):
     # Get content sections
     sections = main_body_elem.findall('common:sections/common:section',
                                       elsevier_ns)
+    paras = []
     if len(sections) == 0:
         logger.info("Found no sections in main body")
+        paras = main_body_elem.findall('common:sections/common:para',
+                                       elsevier_ns)
+        logger.info('Found %d paragraphs in main body' % len(paras))
+    if not paras:
         return None
+
     # Concatenate the section content
+    pars = []
     full_txt = ''
     for s in sections:
         # Paragraphs that are directly under the section
         pars = s.findall('common:para', elsevier_ns)
         # Paragraphs that are under a section within the section
         pars += s.findall('common:section/common:para', elsevier_ns)
-        for p in pars:
-            # Get the initial string inside the paragraph
-            if p.text is not None:
-                full_txt += p.text
-            # When there are tags inside the paragraph (for instance
-            # references), we need to take those child elements one by one
-            # and get the corresponding tail strings and join these. 
-            full_txt += ''.join([c.tail if c.tail is not None 
-                                 else '' for c in p.getchildren()])
-            full_txt += '\n'
+    pars += paras
+    if not pars:
+        return None
+    for p in pars:
+        # Get the initial string inside the paragraph
+        if p.text is not None:
+            full_txt += p.text
+        # When there are tags inside the paragraph (for instance
+        # references), we need to take those child elements one by one
+        # and get the corresponding tail strings and join these. 
+        full_txt += ''.join([c.tail if c.tail is not None 
+                             else '' for c in p.getchildren()])
+        full_txt += '\n'
     return full_txt
 
 
