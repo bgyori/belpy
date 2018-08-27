@@ -6,6 +6,7 @@ cache:
 python:
   - "2.7"
   - "3.5"
+  - "3.7"
 before_install:
   - sudo add-apt-repository --yes ppa:webupd8team/java
   - sudo apt-get update
