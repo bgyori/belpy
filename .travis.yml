@@ -4,7 +4,6 @@ cache:
     - $HOME/.cache/pip
     - $HOME/.pybel
 python:
-  - "2.7"
   - "3.5"
 matrix:
   include:
@@ -60,6 +59,8 @@ install:
   - wget http://sorger.med.harvard.edu/data/bgyori/eidos.jar -nv
   - export EIDOSPATH=$TRAVIS_BUILD_DIR/eidos.jar
   - pip install pycodestyle
+  - wget -nv http://sorger.med.harvard.edu/data/bgyori/kappy-4.0.0-cp37-cp37m-manylinux1_x86_64.whl
+  - pip install -U kappy-4.0.0-cp37-cp37m-manylinux1_x86_64.whl
   # TEES
   - if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
         export RUN_SLOW=true;
