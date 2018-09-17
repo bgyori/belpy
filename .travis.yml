@@ -33,7 +33,9 @@ install:
   - sudo update-java-alternatives -s java-8-oracle
   - sudo apt-get install oracle-java8-set-default
   - export JAVA_HOME="/usr/lib/jvm/java-8-oracle/"
-  - pip install pygraphviz pydot jsonschema coverage python-coveralls boto3 nose-timer flask nltk reportlab
+  - pip install pygraphviz pydot jsonschema coverage python-coveralls boto3
+        sqlalchemy psycopg2-binary pgcopy nose-timer flask nltk reportlab
+        kappy
   - pip install git+https://github.com/bgyori/paths_graph.git@networkx2
   - pip install doctest-ignore-unicode
   - pip install pybel
@@ -59,8 +61,6 @@ install:
   - wget http://sorger.med.harvard.edu/data/bgyori/eidos.jar -nv
   - export EIDOSPATH=$TRAVIS_BUILD_DIR/eidos.jar
   - pip install pycodestyle
-  - wget -nv http://sorger.med.harvard.edu/data/bgyori/kappy-4.0.0-cp37-cp37m-manylinux1_x86_64.whl
-  - pip install -U kappy-4.0.0-cp37-cp37m-manylinux1_x86_64.whl
   # TEES
   - if [[ "$TRAVIS_EVENT_TYPE" == "cron" ]]; then
         export RUN_SLOW=true;
