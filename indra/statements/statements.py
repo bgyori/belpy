@@ -210,7 +210,7 @@ from .util import *
 from .concept import *
 from .context import *
 from .evidence import *
-from .resources import *
+from indra.statements.bio.resources import *
 
 
 logger = logging.getLogger(__name__)
@@ -2242,7 +2242,7 @@ modtype_to_inverse, modclass_to_inverse = _get_mod_inverse_maps()
 
 
 from .io import *
-from .agent import *
+from indra.statements.bio.agent import *
 
 
 stmt_sbo_map = {

@@ -1,5 +1,5 @@
 from __future__ import absolute_import, print_function, unicode_literals
-from builtins import dict, str
+from builtins import str
 from future.utils import python_2_unicode_compatible
 
 
@@ -13,8 +13,8 @@ from indra.util import unicode_strs
 import indra.databases.hgnc_client as hgc
 import indra.databases.uniprot_client as upc
 from indra.statements.statements import modtype_conditions, modtype_to_modclass
-from .concept import Concept
-from .resources import get_valid_residue, get_valid_location, activity_types, \
+from indra.statements.concept import Concept
+from indra.statements.bio.resources import get_valid_residue, get_valid_location, activity_types, \
     amino_acids
 
 
