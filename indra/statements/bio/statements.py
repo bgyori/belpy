@@ -174,24 +174,17 @@ __all__ = [
     'Methylation', 'Demethylation', 'RegulateActivity', 'Inhibition',
     'Activation', 'GtpActivation', 'ActiveForm', 'HasActivity', 'Gef', 'Gap',
     'Complex', 'Translocation', 'RegulateAmount', 'DecreaseAmount',
-    'IncreaseAmount', 'Influence', 'Conversion', 'Unresolved',
-    'Association',
+    'IncreaseAmount', 'Conversion', 'Unresolved',
 
     # Error classes
-    'InputError', 'UnresolvedUuidError', 'InvalidLocationError',
+    'InvalidLocationError',
     'InvalidResidueError', 'NotAStatementName',
 
     # Other classes
-    'Concept', 'Agent', 'Evidence',
-
-    # Context classes
-    'BioContext', 'WorldContext', 'TimeContext', 'RefContext', 'Context',
+    'Agent',
 
     # Functions and values
-    'stmts_from_json', 'get_unresolved_support_uuids', 'stmts_to_json',
-    'stmts_from_json_file', 'stmts_to_json_file',
     'get_valid_residue', 'get_valid_location', 'get_valid_location',
-    'draw_stmt_graph', 'get_all_descendants','make_statement_camel',
     'amino_acids', 'amino_acids_reverse', 'activity_types',
     'cellular_components', 'cellular_components_reverse', 'modtype_to_modclass',
     'modclass_to_modtype', 'modtype_conditions', 'modtype_to_inverse',
@@ -206,10 +199,10 @@ import networkx
 import itertools
 from copy import deepcopy
 from collections import OrderedDict as _o
-from .util import *
-from .concept import *
-from .context import *
-from .evidence import *
+from ..util import *
+from ..general.concept import *
+from ..context import *
+from ..evidence import *
 from indra.statements.bio.resources import *
 
 
@@ -1884,174 +1877,6 @@ class IncreaseAmount(RegulateAmount):
     pass
 
 
-class Influence(IncreaseAmount):
-    """An influence on the quantity of a concept of interest.
-
-    Parameters
-    ----------
-    subj : :py:class:`indra.statement.Concept`
-        The concept which acts as the influencer.
-    obj : :py:class:`indra.statement.Concept`
-        The concept which acts as the influencee
-    subj_delta : Optional[dict]
-        A dictionary specifying the polarity and magnitude of
-        change in the subject.
-    obj_delta : Optional[dict]
-        A dictionary specifying the polarity and magnitude of
-        change in the object.
-    evidence : list of :py:class:`Evidence`
-        Evidence objects in support of the statement.
-    """
-    def __init__(self, subj, obj, subj_delta=None, obj_delta=None,
-                 evidence=None):
-        super(Influence, self).__init__(subj, obj, evidence)
-        if subj_delta is None:
-            subj_delta = {'polarity': None, 'adjectives': []}
-        if obj_delta is None:
-            obj_delta = {'polarity': None, 'adjectives': []}
-        self.subj_delta = subj_delta
-        self.obj_delta = obj_delta
-
-    def refinement_of(self, other, hierarchies):
-        def delta_refinement(dself, dother):
-            # Polarities are either equal
-            if dself['polarity'] == dother['polarity']:
-                pol_refinement = True
-            # Or this one has a polarity and the other doesn't
-            elif dself['polarity'] is not None and dother['polarity'] is None:
-                pol_refinement = True
-            else:
-                pol_refinement = False
-
-            # If other's adjectives are a subset of this
-            if set(dother['adjectives']).issubset(set(dself['adjectives'])):
-                adj_refinement = True
-            else:
-                adj_refinement = False
-            return pol_refinement and adj_refinement
-
-        # Make sure the statement types match
-        if type(self) != type(other):
-            return False
-
-        # Check agent arguments
-        subj_refinement = self.subj.refinement_of(other.subj, hierarchies)
-        obj_refinement = self.obj.refinement_of(other.obj, hierarchies)
-        subjd_refinement = delta_refinement(self.subj_delta, other.subj_delta)
-        objd_refinement = delta_refinement(self.obj_delta, other.obj_delta)
-        return (subj_refinement and obj_refinement and
-                subjd_refinement and objd_refinement)
-
-    def equals(self, other):
-        def delta_equals(dself, dother):
-            if (dself['polarity'] == dother['polarity']) and \
-                (set(dself['adjectives']) == set(dother['adjectives'])):
-                return True
-            else:
-                return False
-        matches = super(Influence, self).equals(other) and \
-            delta_equals(self.subj_delta, other.subj_delta) and \
-            delta_equals(self.obj_delta, other.obj_delta)
-        return matches
-
-    def matches_key(self):
-        key = (type(self), self.subj.matches_key(),
-               self.obj.matches_key(),
-               self.subj_delta['polarity'],
-               sorted(list(set(self.subj_delta['adjectives']))),
-               self.obj_delta['polarity'],
-               sorted(list(set(self.obj_delta['adjectives']))))
-        return str(key)
-
-    def contradicts(self, other, hierarchies):
-        # First case is if they are "consistent" and related
-        if self.entities_match(other) or \
-            self.refinement_of(other, hierarchies) or \
-            other.refinement_of(self, hierarchies):
-            sp = self.overall_polarity()
-            op = other.overall_polarity()
-            if sp and op and sp * op == -1:
-                return True
-        # Second case is if they are "opposites" and related
-        if (self.subj.entity_matches(other.subj) and \
-            self.obj.is_opposite(other.obj, hierarchies)) or \
-           (self.obj.entity_matches(other.obj) and \
-            self.subj.is_opposite(other.subj, hierarchies)):
-            sp = self.overall_polarity()
-            op = other.overall_polarity()
-            if sp and op and sp * op == 1:
-                return True
-        return False
-
-    def overall_polarity(self):
-        # Set p1 and p2 to None / 1 / -1 depending on polarity
-        p1 = self.subj_delta['polarity']
-        p2 = self.obj_delta['polarity']
-        if p1 is None and p2 is None:
-            pol = None
-        elif p2 is None:
-            pol = p1
-        elif p1 is None:
-            pol = p2
-        else:
-            pol = p1 * p2
-        return pol
-
-    def to_json(self, use_sbo=False):
-        generic = super(Influence, self).to_json(use_sbo)
-        json_dict = _o({'type': generic['type']})
-        json_dict['subj'] = generic['subj']
-        json_dict['subj_delta'] = self.subj_delta
-        json_dict['obj'] = generic['obj']
-        json_dict['obj_delta'] = self.obj_delta
-        json_dict.update(generic)
-        return json_dict
-
-    @classmethod
-    def _from_json(cls, json_dict):
-        subj = json_dict.get('subj')
-        obj = json_dict.get('obj')
-        subj_delta = json_dict.get('subj_delta')
-        obj_delta = json_dict.get('obj_delta')
-        if subj:
-            subj = Concept._from_json(subj)
-        if obj:
-            obj = Concept._from_json(obj)
-        stmt = cls(subj, obj, subj_delta, obj_delta)
-        return stmt
-
-    def __repr__(self):
-        if sys.version_info[0] >= 3:
-            return self.__str__()
-        else:
-            return self.__str__().encode('utf-8')
-
-    def __str__(self):
-        def _influence_concept_str(concept, delta):
-            if delta is not None:
-                pol = delta.get('polarity')
-                if pol == 1:
-                    pol_str = 'positive'
-                elif pol == -1:
-                    pol_str = 'negative'
-                else:
-                    pol_str = ''
-                concept_str = '%s(%s)' % (concept.name, pol_str)
-            else:
-                concept_str = concept.name
-            return concept_str
-        s = ("%s(%s, %s)" % (type(self).__name__,
-                             _influence_concept_str(self.subj,
-                                                    self.subj_delta),
-                             _influence_concept_str(self.obj,
-                                                    self.obj_delta)))
-        return s
-
-
-class Association(Complex):
-    pass
-
-
 class Conversion(Statement):
     """Conversion of molecular species mediated by a controller protein.
 
@@ -2241,7 +2066,6 @@ def _get_mod_inverse_maps():
 modtype_to_inverse, modclass_to_inverse = _get_mod_inverse_maps()
 
 
-from .io import *
 from indra.statements.bio.agent import *
 
 
@@ -2273,75 +2097,3 @@ stmt_sbo_map = {
     'rasgap': '0000172',  # catalysis
     'statement': '0000231'  # occuring entity representation
     }
-
-
-def sorted_agents(agent_list):
-    return sorted(agent_list, key=lambda ag: ag.matches_key())
-
-
-def get_all_descendants(parent):
-    """Get all the descendants of a parent class, recursively."""
-    children = parent.__subclasses__()
-    descendants = children[:]
-    for child in children:
-        descendants += get_all_descendants(child)
-    return descendants
-
-
-# In the future, when hierarchy is no longer determined by sub-classing, this
-# function should be altered to account for the change.
-def get_type_hierarchy(s):
-    """Get the sequence of parents from `s` to Statement.
-
-    Parameters
-    ----------
-    s : a class or instance of a child of Statement
-        For example the statement `Phosphorylation(MEK(), ERK())` or just the
-        class `Phosphorylation`.
-
-    Returns
-    -------
-    parent_list : list[types]
-        A list of the types leading up to Statement.
-
-    Examples
-    --------
-        >> s = Phosphorylation(MAPK1(), Elk1())
-        >> get_type_hierarchy(s)
-        [Phosphorylation, AddModification, Modification, Statement]
-        >> get_type_hierarchy(AddModification)
-        [AddModification, Modification, Statement]
-    """
-    tp = type(s) if not isinstance(s, type) else s
-    p_list = [tp]
-    for p in tp.__bases__:
-        if p is not Statement:
-            p_list.extend(get_type_hierarchy(p))
-        else:
-            p_list.append(p)
-    return p_list
-
-
-class NotAStatementName(Exception):
-    pass
-
-
-def get_statement_by_name(stmt_name):
-    """Get a statement class given the name of the statement class."""
-    stmt_classes = get_all_descendants(Statement)
-    for stmt_class in stmt_classes:
-        if stmt_class.__name__.lower() == stmt_name.lower():
-            return stmt_class
-    raise NotAStatementName('\"%s\" is not recognized as a statement type!'
-                            % stmt_name)
-
-
-def make_statement_camel(stmt_name):
-    """Makes a statement name match the case of the corresponding statement."""
-    return get_statement_by_name(stmt_name).__name__
-
-
-def get_unresolved_support_uuids(stmts):
-    """Get uuids unresolved in support from stmts from stmts_from_json."""
-    return {s.uuid for stmt in stmts for s in stmt.supports + stmt.supported_by
-            if isinstance(s, Unresolved)}
