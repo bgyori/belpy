@@ -9,6 +9,7 @@ __all__ = ['make_hash', 'sorted_agents', 'get_all_descendants',
 
 
 from hashlib import md5
+from . import Statement, Unresolved
 
 
 def make_hash(s, n_bytes):

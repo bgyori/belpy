@@ -4,14 +4,6 @@ import networkx
 from copy import deepcopy
 from collections import OrderedDict as _o
 
-from .io import *
-from .util import *
-from .context import *
-from .evidence import *
-from .bio.statements import *
-from .general.statements import *
-
-
 try:  # Python 2
     basestring
 except NameError:  # Python 3
@@ -362,3 +354,13 @@ class Unresolved(Statement):
         else:
             return "%s(full_hash=%s)" % (type(self).__name__,
                                          self._full_hash)
+
+
+from .io import *
+from .util import *
+from .context import *
+from .evidence import *
+from .bio.statements import *
+from .general.statements import *
+
+

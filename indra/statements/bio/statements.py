@@ -174,7 +174,7 @@ __all__ = [
     'Methylation', 'Demethylation', 'RegulateActivity', 'Inhibition',
     'Activation', 'GtpActivation', 'ActiveForm', 'HasActivity', 'Gef', 'Gap',
     'Complex', 'Translocation', 'RegulateAmount', 'DecreaseAmount',
-    'IncreaseAmount', 'Conversion', 'Unresolved',
+    'IncreaseAmount', 'Conversion',
 
     # Error classes
     'InvalidLocationError',

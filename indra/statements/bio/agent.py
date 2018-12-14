@@ -12,10 +12,11 @@ from collections import OrderedDict as _o
 from indra.util import unicode_strs
 import indra.databases.hgnc_client as hgc
 import indra.databases.uniprot_client as upc
-from indra.statements.statements import modtype_conditions, modtype_to_modclass
-from indra.statements.concept import Concept
-from indra.statements.bio.resources import get_valid_residue, get_valid_location, activity_types, \
-    amino_acids
+from indra.statements.bio.statements import modtype_conditions, \
+    modtype_to_modclass
+from indra.statements.general.concept import Concept
+from indra.statements.bio.resources import get_valid_residue, \
+    get_valid_location, activity_types, amino_acids
 
 
 

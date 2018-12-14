@@ -38,7 +38,7 @@ def get_valid_location(location):
 def _read_activity_types():
     """Read types of valid activities from a resource file."""
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    ac_file = os.path.join(this_dir, os.pardir, 'resources',
+    ac_file = os.path.join(this_dir, os.pardir, os.pardir, 'resources',
                            'activity_hierarchy.rdf')
     g = rdflib.Graph()
     with open(ac_file, 'r'):
@@ -61,9 +61,9 @@ def _read_cellular_components():
     # file to make sure we don't error with InvalidLocationError with some
     # deprecated cellular location names
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    cc_file = os.path.join(this_dir, os.pardir, 'resources',
+    cc_file = os.path.join(this_dir, os.pardir, os.pardir, 'resources',
                            'cellular_components.tsv')
-    cc_patch_file = os.path.join(this_dir, os.pardir, 'resources',
+    cc_patch_file = os.path.join(this_dir, os.pardir, os.pardir, 'resources',
                                  'cellular_components_patch.tsv')
     cellular_components = {}
     cellular_components_reverse = {}
@@ -92,7 +92,8 @@ cellular_components, cellular_components_reverse = _read_cellular_components()
 def _read_amino_acids():
     """Read the amino acid information from a resource file."""
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    aa_file = os.path.join(this_dir, os.pardir, 'resources', 'amino_acids.tsv')
+    aa_file = os.path.join(this_dir, os.pardir, os.pardir, 'resources',
+                           'amino_acids.tsv')
     amino_acids = {}
     amino_acids_reverse = {}
     with open(aa_file, 'rt') as fh:
