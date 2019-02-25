@@ -53,7 +53,7 @@ class InvalidCorpusError(Exception):
     pass
 
 
-def default_assembly(stmts, sample=True):
+def run_assembly(stmts, sample=True):
     from indra.belief import sample_statements
     from indra.belief.wm_scorer import get_eidos_scorer
     from indra.preassembler.hierarchy_manager import get_wm_hierarchies
@@ -203,6 +203,11 @@ class LiveCurator(object):
         belief_dict = {st.uuid: st.belief for st in stmts}
         return belief_dict
 
+    def run_assembly(self, corpus_id, sample=False):
+        corpus = self.get_corpus(corpus_id)
+        stmts = corpus.raw_statements
+        return run_assembly(stmts, sample=sample)
+
     def update_groundings(self, corpus_id):
         corpus = self.get_corpus(corpus_id)
 
@@ -220,7 +225,7 @@ class LiveCurator(object):
             for concept in stmt.agent_list():
                 concept.db_refs['UN'] = groundings[idx]
                 idx += 1
-        assembled_statements = default_assembly(corpus.raw_statements)
+        assembled_statements = run_assembly(corpus.raw_statements)
         corpus.statements = {s.uuid: s for s in assembled_statements}
         return assembled_statements
 
@@ -318,6 +323,19 @@ def update_groundings():
     corpus_id = request.json.get('corpus_id')
     # Run the actual regrounding
     stmts = curator.update_groundings(corpus_id)
+    stmts_json = stmts_to_json(stmts)
+    return jsonify(stmts_json)
+
+
+@app.route('/run_assembly', methods=['POST'])
+def run_assembly():
+    if request.json is None:
+        abort(Response('Missing application/json header.', 415))
+    # Get input parameters
+    corpus_id = request.json.get('corpus_id')
+    sample = request.json.get('sample', False)
+    # Run the actual regrounding
+    stmts = curator.run_assembly(corpus_id, sample)
     stmts_json = stmts_to_json(stmts)
     return jsonify(stmts_json)
 
