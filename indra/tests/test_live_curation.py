@@ -289,6 +289,38 @@ class LiveGroundingTestCase(unittest.TestCase):
         assert stmts[0].subj.db_refs['UN'][0][0] == 'UN/animal/dog'
 
 
+class SamplingTestCase(unittest.TestCase):
+    def _send_request(self, endpoint, req_dict):
+        resp = self.app.post(endpoint,
+                             data=json.dumps(req_dict),
+                             headers={'Content-Type': 'application/json'})
+        return resp
+
+    def setUp(self):
+        _make_corpus()
+        app.testing = True
+        self.app = app.test_client()
+        curator.corpora = {'1': _make_corpus()}
+
+    def _sample(self):
+        resp = self._send_request('run_assembly',
+                                  {'corpus_id': '1',
+                                   'sample': True})
+        res = json.loads(resp.data.decode('utf-8'))
+        stmts = stmts_from_json(res)
+        return stmts
+
+    def test_sampling(self):
+        stmts = self._sample()
+        print(stmts)
+        stmts = self._sample()
+        print(stmts)
+        stmts = self._sample()
+        print(stmts)
+        stmts = self._sample()
+        print(stmts)
+
+
 def close_enough(probs, ref):
     for k, v in probs.items():
         if abs(ref[k] - probs[k]) > 0.0001:

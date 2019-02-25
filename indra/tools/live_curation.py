@@ -328,7 +328,7 @@ def update_groundings():
 
 
 @app.route('/run_assembly', methods=['POST'])
-def run_assembly():
+def run_assembly_app():
     if request.json is None:
         abort(Response('Missing application/json header.', 415))
     # Get input parameters
