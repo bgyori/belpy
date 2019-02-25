@@ -53,16 +53,20 @@ class InvalidCorpusError(Exception):
     pass
 
 
-def default_assembly(stmts):
+def default_assembly(stmts, sample=True):
+    from indra.belief import sample_statements
     from indra.belief.wm_scorer import get_eidos_scorer
     from indra.preassembler.hierarchy_manager import get_wm_hierarchies
     hm = get_wm_hierarchies()
     scorer = get_eidos_scorer()
     stmts = ac.run_preassembly(stmts, belief_scorer=scorer,
-                               return_toplevel=True,
+                               return_toplevel=False,
                                flatten_evidence=True,
                                flatten_evidence_collect_from='supported_by',
                                poolsize=4)
+    if sample:
+        stmts = sample_statements(stmts)
+    stmts = ac.filter_top_level(stmts)
     stmts = ac.merge_groundings(stmts)
     stmts = ac.merge_deltas(stmts)
     stmts = ac.standardize_names_groundings(stmts)
