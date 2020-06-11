@@ -38,6 +38,9 @@ class IndraOntology(networkx.DiGraph):
         self.component_counter = 0
         self.has_component_labels = False
         self.transitive_closure = set()
+        self.labels = {}
+        self.labels_reverse = {}
+        self._label_counter = 0
 
     def initialize(self):
         """Initialize the ontology by adding nodes and edges.

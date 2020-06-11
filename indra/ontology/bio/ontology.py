@@ -22,6 +22,33 @@ class BioOntology(IndraOntology):
     def __init__(self):
         super().__init__()
 
+    def get_create_label(self, ns, id):
+        try:
+            return self.labels[(ns, id)]
+        except KeyError:
+            label = self._label_counter
+            self.labels[(ns, id)] = label
+            self.labels_reverse[label] = (ns, id)
+            self._label_counter += 1
+            return label
+
+    def label(self, ns, id):
+        return self.labels.get((ns, id))
+
+    def get_ns(self, node):
+        nsid = self.get_ns_id(node)
+        return nsid[0] if nsid else None
+
+    def get_id(self, node):
+        nsid = self.get_ns_id(node)
+        return nsid[1] if nsid else None
+
+    def get_ns_id(self, node):
+        return self.reverse_label(node)
+
+    def reverse_label(self, label):
+        return self.labels_reverse.get(label)
+
     def initialize(self, rebuild=False):
         if rebuild or not os.path.exists(CACHE_FILE):
             logger.info('Initializing INDRA bio ontology for the first time, '
@@ -84,13 +111,13 @@ class BioOntology(IndraOntology):
 
     def add_hgnc_nodes(self):
         from indra.databases import hgnc_client
-        nodes = [(self.label('HGNC', hid), {'name': hname})
+        nodes = [(self.get_create_label('HGNC', hid), {'name': hname})
                  for (hid, hname) in hgnc_client.hgnc_names.items()]
         self.add_nodes_from(nodes)
 
     def add_uniprot_nodes(self):
         from indra.databases import uniprot_client
-        nodes = [(self.label('UP', uid), {'name': uname})
+        nodes = [(self.get_create_label('UP', uid), {'name': uname})
                  for (uid, uname)
                  in uniprot_client.um.uniprot_gene_name.items()]
         self.add_nodes_from(nodes)
@@ -102,7 +129,7 @@ class BioOntology(IndraOntology):
             for feature in features:
                 if feature.id is None:
                     continue
-                node = self.label('UPPRO', feature.id)
+                node = self.get_create_label('UPPRO', feature.id)
                 data = {'name': feature.name}
                 nodes.append((node, data))
         self.add_nodes_from(nodes)
@@ -114,11 +141,13 @@ class BioOntology(IndraOntology):
         for hid, uid in hgnc_client.uniprot_ids.items():
             uids = uid.split(', ')
             for uid in uids:
-                edges.append((self.label('HGNC', hid), self.label('UP', uid),
+                edges.append((self.get_create_label('HGNC', hid),
+                              self.get_create_label('UP', uid),
                               {'type': 'xref', 'source': 'hgnc'}))
         self.add_edges_from(edges)
 
-        edges = [(self.label('UP', uid), self.label('HGNC', hid),
+        edges = [(self.get_create_label('UP', uid),
+                  self.get_create_label('HGNC', hid),
                   {'type': 'xref', 'source': 'hgnc'})
                  for uid, hid in uniprot_client.um.uniprot_hgnc.items()]
         self.add_edges_from(edges)
@@ -129,7 +158,7 @@ class BioOntology(IndraOntology):
                                                  'entities.csv'),
                                     delimiter=','):
             entity = row[0]
-            nodes.append((self.label('FPLX', entity),
+            nodes.append((self.get_create_label('FPLX', entity),
                           {'name': entity}))
         self.add_nodes_from(nodes)
 
@@ -142,8 +171,8 @@ class BioOntology(IndraOntology):
             ns1, id1, rel, ns2, id2 = row
             if ns1 == 'HGNC':
                 id1 = hgnc_client.get_hgnc_id(id1)
-            edges.append((self.label(ns1, id1),
-                          self.label(ns2, id2),
+            edges.append((self.get_create_label(ns1, id1),
+                          self.get_create_label(ns2, id2),
                           {'type': rel}))
         self.add_edges_from(edges)
 
@@ -156,11 +185,11 @@ class BioOntology(IndraOntology):
             ref_ns, ref_id, fplx_id = row
             if ref_ns not in include_refs:
                 continue
-            edges.append((self.label(ref_ns, ref_id),
-                          self.label('FPLX', fplx_id),
+            edges.append((self.get_create_label(ref_ns, ref_id),
+                          self.get_create_label('FPLX', fplx_id),
                           {'type': 'xref', 'source': 'fplx'}))
-            edges.append((self.label('FPLX', fplx_id),
-                          self.label(ref_ns, ref_id),
+            edges.append((self.get_create_label('FPLX', fplx_id),
+                          self.get_create_label(ref_ns, ref_id),
                           {'type': 'xref', 'source': 'fplx'}))
         self.add_edges_from(edges)
 
@@ -171,7 +200,7 @@ class BioOntology(IndraOntology):
         for ns in namespaces:
             oc = obo_client.OboClient(prefix=ns)
             for db_id, entry in oc.entries.items():
-                nodes.append((self.label(ns.upper(), db_id),
+                nodes.append((self.get_create_label(ns.upper(), db_id),
                               {'name': entry['name']}))
         self.add_nodes_from(nodes)
 
@@ -201,8 +230,8 @@ class BioOntology(IndraOntology):
                     if not mapped_rel:
                         continue
                     for target in targets:
-                        edges.append((self.label(ns.upper(), db_id),
-                                      self.label(ns.upper(), target),
+                        edges.append((self.get_create_label(ns.upper(), db_id),
+                                      self.get_create_label(ns.upper(), target),
                                       {'type': mapped_rel}))
         self.add_edges_from(edges)
 
@@ -218,15 +247,15 @@ class BioOntology(IndraOntology):
         edges = []
         data = {'type': 'xref', 'source': 'chebi'}
 
-        def label_fix(ns, id):
+        def get_create_label_fix(ns, id):
             if ns == 'CHEBI' and not id.startswith('CHEBI'):
                 id = 'CHEBI:%s' % id
-            return self.label(ns, id)
+            return self.get_create_label(ns, id)
 
         for map_dict, from_ns, to_ns, symmetric in mappings:
             for from_id, to_id in map_dict.items():
-                source = label_fix(from_ns, from_id)
-                target = label_fix(to_ns, to_id)
+                source = get_create_label_fix(from_ns, from_id)
+                target = get_create_label_fix(to_ns, to_id)
                 edges.append((source, target, data))
                 if symmetric:
                     edges.append((target, source, data))
@@ -234,7 +263,7 @@ class BioOntology(IndraOntology):
 
     def add_mesh_nodes(self):
         from indra.databases import mesh_client
-        nodes = [(self.label('MESH', mesh_id),
+        nodes = [(self.get_create_label('MESH', mesh_id),
                   {'name': name})
                  for mesh_id, name in
                  mesh_client.mesh_id_to_name.items()]
@@ -245,12 +274,12 @@ class BioOntology(IndraOntology):
         edges = []
         data = {'type': 'xref', 'source': 'gilda'}
         for mesh_id, (db_ns, db_id) in mesh_client.mesh_to_db.items():
-            edges.append((self.label('MESH', mesh_id),
-                          self.label(db_ns, db_id),
+            edges.append((self.get_create_label('MESH', mesh_id),
+                          self.get_create_label(db_ns, db_id),
                           data))
         for (db_ns, db_id), mesh_id in mesh_client.db_to_mesh.items():
-            edges.append((self.label(db_ns, db_id),
-                          self.label('MESH', mesh_id),
+            edges.append((self.get_create_label(db_ns, db_id),
+                          self.get_create_label('MESH', mesh_id),
                           data))
         self.add_edges_from(edges)
 
@@ -270,22 +299,22 @@ class BioOntology(IndraOntology):
                 parent_id = mesh_tree_numbers_to_id[parent_tn]
                 if parent_id in parents_added:
                     continue
-                edges.append((self.label('MESH', mesh_id),
-                              self.label('MESH', parent_id),
+                edges.append((self.get_create_label('MESH', mesh_id),
+                              self.get_create_label('MESH', parent_id),
                               {'type': 'isa'}))
         self.add_edges_from(edges)
 
     def add_ncit_nodes(self):
         from indra.sources.trips.processor import ncit_map
-        nodes = [(self.label('NCIT', ncit_id)) for ncit_id in ncit_map]
+        nodes = [(self.get_create_label('NCIT', ncit_id)) for ncit_id in ncit_map]
         self.add_nodes_from(nodes)
 
     def add_ncit_xrefs(self):
         from indra.sources.trips.processor import ncit_map
         edges = []
         for ncit_id, (target_ns, target_id) in ncit_map.items():
-            edges.append((self.label('NCIT', ncit_id),
-                          self.label(target_ns, target_id),
+            edges.append((self.get_create_label('NCIT', ncit_id),
+                          self.get_create_label(target_ns, target_id),
                           {'type': 'xref', 'source': 'ncit'}))
         self.add_edges_from(edges)
 
@@ -293,11 +322,11 @@ class BioOntology(IndraOntology):
         from indra.databases import uniprot_client
         edges = []
         for prot_id, features in uniprot_client.um.features.items():
-            prot_node = self.label('UP', prot_id)
+            prot_node = self.get_create_label('UP', prot_id)
             for feature in features:
                 if feature.id is None:
                     continue
-                feat_node = self.label('UPPRO', feature.id)
+                feat_node = self.get_create_label('UPPRO', feature.id)
                 edges.append((feat_node, prot_node,
                               {'type': 'partof'}))
         self.add_edges_from(edges)
@@ -306,7 +335,7 @@ class BioOntology(IndraOntology):
         from indra.databases import mirbase_client
         nodes = []
         for mirbase_id, name in mirbase_client._mirbase_id_to_name.items():
-            nodes.append((self.label('MIRBASE', mirbase_id),
+            nodes.append((self.get_create_label('MIRBASE', mirbase_id),
                           {'name': name}))
         self.add_nodes_from(nodes)
 
@@ -315,13 +344,13 @@ class BioOntology(IndraOntology):
         edges = []
         for mirbase_id, hgnc_id in \
                 mirbase_client._mirbase_id_to_hgnc_id.items():
-            edges.append((self.label('MIRBASE', mirbase_id),
-                          self.label('HGNC', hgnc_id),
+            edges.append((self.get_create_label('MIRBASE', mirbase_id),
+                          self.get_create_label('HGNC', hgnc_id),
                           {'type': 'xref', 'source': 'mirbase'}))
         for hgnc_id, mirbase_id in \
                 mirbase_client._hgnc_id_to_mirbase_id.items():
-            edges.append((self.label('HGNC', hgnc_id),
-                          self.label('MIRBASE', mirbase_id),
+            edges.append((self.get_create_label('HGNC', hgnc_id),
+                          self.get_create_label('MIRBASE', mirbase_id),
                           {'type': 'xref', 'source': 'mirbase'}))
         self.add_edges_from(edges)
 
@@ -336,8 +365,8 @@ class BioOntology(IndraOntology):
             ('gap', 'catalytic')
         ]
         self.add_edges_from([
-            (self.label('INDRA_ACTIVITIES', source),
-             self.label('INDRA_ACTIVITIES', target),
+            (self.get_create_label('INDRA_ACTIVITIES', source),
+             self.get_create_label('INDRA_ACTIVITIES', target),
              {'type': 'isa'})
             for source, target in rels
             ]
@@ -345,8 +374,8 @@ class BioOntology(IndraOntology):
 
     def add_modification_hierarchy(self):
         self.add_edges_from([
-            (self.label('INDRA_MODS', source),
-             self.label('INDRA_MODS', 'modification'),
+            (self.get_create_label('INDRA_MODS', source),
+             self.get_create_label('INDRA_MODS', 'modification'),
              {'type': 'isa'})
             for source in modtype_conditions
             if source != 'modification'
