@@ -207,6 +207,27 @@ def process_json_file(file_name):
     return process_pybel_graph(pybel_graph)
 
 
+def process_json(graph_json_dict):
+    """Return a PybelProcessor by processing a Node-Link JSON dict.
+
+    For more information on this format, see:
+    http://pybel.readthedocs.io/en/latest/io.html#node-link-json
+
+    Parameters
+    ----------
+    graph_json_dict : dict
+        A Node-Link JSON dict.
+
+    Returns
+    -------
+    bp : PybelProcessor
+        A PybelProcessor object which contains INDRA Statements in
+        bp.statements.
+    """
+    pybel_graph = pybel.from_nodelink(graph_json_dict, check_version=False)
+    return process_pybel_graph(pybel_graph)
+
+
 def process_cbn_jgif_file(file_name):
     """Return a PybelProcessor by processing a CBN JGIF JSON file.
 
