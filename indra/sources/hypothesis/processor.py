@@ -58,7 +58,10 @@ class HypothesisProcessor:
             tags = annotation.get('tags')
             # Allow no tags or indra as a tag
             if not tags or 'indra' in tags:
-                stmts = self.stmts_from_annotation(annotation)
+                if 'bel' in tags:
+                    stmts = self.stmts_from_bel_annotation(annotation)
+                else:
+                    stmts = self.stmts_from_annotation(annotation)
                 if stmts:
                     self.statements += stmts
 
@@ -129,6 +132,19 @@ class HypothesisProcessor:
                 ev.annotations['hypothes.is'] = annotation
                 ev.context = bio_context
         return rp.statements
+
+    def stmts_from_bel_annotation(self, annotation):
+        import pybel
+        from indra.sources import bel
+        text = annotation.get('text')
+        if not text:
+            return []
+        pybel_json = pybel.parse(text)
+        # FIXME: can this JSON simply be turned into a PyBel graph
+        # like this?
+        # TODO: propagate metadata and perform grounding
+        bp = bel.process_json(pybel_json)
+        return bp.statements
 
 
 def parse_context_entry(entry, grounder, sentence=None):
