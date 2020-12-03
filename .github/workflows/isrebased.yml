@@ -8,7 +8,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Check if the branch is rebased
-    - run: |
+      run: |
         git remote set-branches --add origin master
         git fetch
         hash1=$(git show-ref --heads -s origin/master)
