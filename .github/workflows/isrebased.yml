@@ -1,6 +1,6 @@
 name: Check if the PR branch is rebased
 
-on: pull_request
+on: [push, pull_request]
 
 jobs:
   build:
