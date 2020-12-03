@@ -1,0 +1,16 @@
+name: Check if the PR branch is rebased
+
+on: pull_request
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Check if the branch is rebased
+    - run: |
+        hash1=$(git show-ref --heads -s master)
+        hash2=$(git merge-base master HEAD)
+        echo $hash1
+        echo $hash2
+        [ "${hash1}" = "${hash2}" ] && exit 0 || exit 1
