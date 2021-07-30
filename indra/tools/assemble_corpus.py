@@ -389,7 +389,8 @@ def run_preassembly(stmts_in, return_toplevel=True, poolsize=None,
         logger.info('Normalizing opposites on %d statements' % len(pa.stmts))
         pa.normalize_opposites(normalize_ns)
 
-    dedupl_stmts = run_preassembly_duplicate(pa, be, save=dump_pkl_unique)
+    dedupl_stmts = run_preassembly_duplicate(pa, belief_scorer,
+                                             save=dump_pkl_unique)
     if not run_refinement:
         return dedupl_stmts
 
@@ -403,19 +404,19 @@ def run_preassembly(stmts_in, return_toplevel=True, poolsize=None,
                'flatten_evidence_collect_from': flatten_evidence_collect_from,
                'filters': filters
                }
-    stmts_out = run_preassembly_related(pa, be, **options)
+    stmts_out = run_preassembly_related(pa, belief_scorer, **options)
     return stmts_out
 
 
-def run_preassembly_duplicate(preassembler, beliefengine, **kwargs):
+def run_preassembly_duplicate(preassembler, belief_scorer=None, **kwargs):
     """Run deduplication stage of preassembly on a list of statements.
 
     Parameters
     ----------
     preassembler : indra.preassembler.Preassembler
         A Preassembler instance
-    beliefengine : indra.belief.BeliefEngine
-        A BeliefEngine instance.
+    belief_scorer : Optional[indra.belief.BeliefScorer]
+        A BeliefScorer instance.
     save : Optional[str]
         The name of a pickle file to save the results (stmts_out) into.
 
@@ -424,18 +425,20 @@ def run_preassembly_duplicate(preassembler, beliefengine, **kwargs):
     stmts_out : list[indra.statements.Statement]
         A list of unique statements.
     """
+    be = BeliefEngine(scorer=belief_scorer,
+                      matches_fun=preassembler.matches_fun)
     logger.info('Combining duplicates on %d statements...' %
                 len(preassembler.stmts))
     dump_pkl = kwargs.get('save')
     stmts_out = preassembler.combine_duplicates()
-    beliefengine.set_prior_probs(stmts_out)
+    be.set_prior_probs(stmts_out)
     logger.info('%d unique statements' % len(stmts_out))
     if dump_pkl:
         dump_statements(stmts_out, dump_pkl)
     return stmts_out
 
 
-def run_preassembly_related(preassembler, beliefengine, **kwargs):
+def run_preassembly_related(preassembler, belief_scorer=None, **kwargs):
     """Run related stage of preassembly on a list of statements.
 
     Parameters
@@ -443,8 +446,8 @@ def run_preassembly_related(preassembler, beliefengine, **kwargs):
     preassembler : indra.preassembler.Preassembler
         A Preassembler instance which already has a set of unique statements
         internally.
-    beliefengine : indra.belief.BeliefEngine
-        A BeliefEngine instance.
+    belief_scorer : Optional[indra.belief.BeliefScorer]
+        An optional BeliefScorer instance.
     return_toplevel : Optional[bool]
         If True, only the top-level statements are returned. If False,
         all statements are returned irrespective of level of specificity.
@@ -479,7 +482,9 @@ def run_preassembly_related(preassembler, beliefengine, **kwargs):
                                              size_cutoff=size_cutoff,
                                              filters=filters)
     # Calculate beliefs
-    beliefengine.set_hierarchy_probs(stmts_out)
+    be = BeliefEngine(scorer=belief_scorer,
+                      matches_fun=preassembler.matches_fun)
+    be.set_hierarchy_probs(stmts_out)
 
     # Flatten evidence if needed
     do_flatten_evidence = kwargs.get('flatten_evidence', False)
