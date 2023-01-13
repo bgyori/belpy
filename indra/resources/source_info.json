@@ -328,5 +328,15 @@
             "color": "white",
             "background-color": "#bf98eb"
         }
+    },
+    "stkatlas": {
+        "name": "STK Atlas",
+        "link": "https://www.nature.com/articles/s41586-022-05575-3",
+        "type": "database",
+        "domain": "biology",
+        "default_style": {
+            "color": "white",
+            "background-color": "#ffa07a"
+        }
     }
 }

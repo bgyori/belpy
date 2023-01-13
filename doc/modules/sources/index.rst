@@ -39,6 +39,7 @@ Molecular Pathway Databases
    omnipath/index
    ubibrowser
    acsn
+   stk_atlas
 
 Chemical Information Databases
 ------------------------------
